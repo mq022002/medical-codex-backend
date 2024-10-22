@@ -17,7 +17,8 @@ def get_translation(
     query: schemas.TranslationQuery, db: Session = Depends(dependancies.get_db)
 ):
     logger.info("Received translation request")
-    return {"results": []}
+    results = translation(db, query)
+    return results
 
 
 @router.post("/test", response_model=schemas.Translation)
@@ -26,6 +27,7 @@ def get_translation_test(
 ):
     logger.info(query)
     logger.info(db.info)
+    logger.info("Received test translation request")
 
     def result(number):
         return {
@@ -34,5 +36,4 @@ def get_translation_test(
             "translated_uid": number,
         }
 
-    results = {"results": [result(i) for i in range(5)]}
-    return results
+    return {"results": [result(i) for i in range(5)]}
