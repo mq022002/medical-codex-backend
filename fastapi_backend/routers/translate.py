@@ -8,7 +8,7 @@ import schemas
 from func import translation
 from config import LOGGER_NAME
 
-router = APIRouter(prefix="/translate", tags=["levels"])
+router = APIRouter(prefix="/translate", tags=["translate"])
 logger = logging.getLogger(LOGGER_NAME)
 
 
@@ -16,16 +16,16 @@ logger = logging.getLogger(LOGGER_NAME)
 def get_translation(
     query: schemas.TranslationQuery, db: Session = Depends(dependancies.get_db)
 ):
-    results = translation.translate(db, query)
-    return results
+    logger.info("Received translation request")
+    return {"results": []}
 
 
 @router.post("/test", response_model=schemas.Translation)
 def get_translation_test(
     query: schemas.TranslationQuery, db: Session = Depends(dependancies.get_db)
 ):
-    logging.info(query)
-    logging.info(db.info)
+    logger.info(query)
+    logger.info(db.info)
 
     def result(number):
         return {
