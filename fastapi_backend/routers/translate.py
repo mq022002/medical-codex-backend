@@ -17,8 +17,15 @@ def get_translation(
     query: schemas.TranslationQuery, db: Session = Depends(dependancies.get_db)
 ):
     logger.info("Received translation request")
-    results = translation(db, query)
-    return results
+    return {
+        "results": [
+            {
+                "translated_name": "Mock Translation",
+                "translated_source": "local_db",
+                "translated_uid": 1,
+            }
+        ]
+    }
 
 
 @router.post("/test", response_model=schemas.Translation)
