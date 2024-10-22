@@ -1,52 +1,52 @@
-from sqlalchemy import text
 import logging
-from sqlalchemy.orm import Session
+import sqlite3
 from fastapi import HTTPException
 
 logger = logging.getLogger("translation")
 
 
-def translate(db: Session, query) -> dict:
+def translate(query) -> dict:
     try:
         term = query.translation_query.matching_name.lower()
-        target_language = query.target_language
 
-        logger.info(f"Translating '{term}' to '{target_language}'")
+        logger.info(f"Searching for translation of '{term}'")
 
-        language_columns = {
-            "uk": "label_uk",
-            "ru": "label_ru",
-            "gr": "label_gr",
-            "en": "label_en",
-        }
+        conn = sqlite3.connect("fastapi_backend/database/medicines.db")
+        cursor = conn.cursor()
 
-        if target_language not in language_columns:
-            raise ValueError(f"Invalid target language: {target_language}")
-
-        sql_query = text(
-            f"""
+        sql_query = """
             SELECT label_uk, label_ru, label_gr, label_en
             FROM medicines
-            WHERE LOWER(label_uk) = :term OR LOWER(label_ru) = :term
-                  OR LOWER(label_gr) = :term OR LOWER(label_en) = :term
-                  OR alias_list_uk LIKE :like_term OR alias_list_ru LIKE :like_term
-                  OR alias_list_gr LIKE :like_term OR alias_list_en LIKE :like_term
+            WHERE LOWER(label_uk) = ? OR LOWER(label_ru) = ? 
+               OR LOWER(label_gr) = ? OR LOWER(label_en) = ?
+               OR alias_list_uk LIKE ? OR alias_list_ru LIKE ? 
+               OR alias_list_gr LIKE ? OR alias_list_en LIKE ?
+            LIMIT 1;
         """
-        )
 
         logger.info(f"Executing SQL query: {sql_query}")
 
-        result = db.execute(
-            sql_query, {"term": term, "like_term": f"%{term}%"}
-        ).fetchone()
+        cursor.execute(
+            sql_query,
+            (
+                term,
+                term,
+                term,
+                term,
+                f"%{term}%",
+                f"%{term}%",
+                f"%{term}%",
+                f"%{term}%",
+            ),
+        )
+        result = cursor.fetchone()
 
-        logger.info(f"Query Result: {result}")
+        conn.close()
 
         if result:
-            translated_term = result[
-                list(language_columns.keys()).index(target_language)
-            ]
+            translated_term = next((col for col in result if col), None)
             logger.info(f"Translation found: {translated_term}")
+
             return {
                 "results": [
                     {
